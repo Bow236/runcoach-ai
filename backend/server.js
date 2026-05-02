@@ -72,6 +72,10 @@ app.post("/runs/:id/diagnosis", (req, res) => {
     diagnosis.strengths.push("Good endurance");
   }
 
+  if (run.distance >= 5) {
+    diagnosis.strengths.push("Good running distance");
+  }
+
   if (diagnosis.weaknesses.length === 0) {
     diagnosis.recommendations.push("Keep a stable pace");
   }

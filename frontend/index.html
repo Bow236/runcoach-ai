@@ -5,27 +5,97 @@
 </head>
 <body>
 
-<h1>Runs</h1>
+  <h1>RunCoach AI</h1>
 
-<button onclick="loadRuns()">Load Runs</button>
+  <h2>Add Run</h2>
 
-<ul id="runsList"></ul>
+  <input id="distance" placeholder="Distance (km)">
+  <input id="duration" placeholder="Duration (min)">
+  <input id="bpm" placeholder="BPM">
 
-<script>
-async function loadRuns() {
-  const res = await fetch("http://localhost:3000/runs");
-  const data = await res.json();
+  <button onclick="addRun()">Add Run</button>
 
-  const list = document.getElementById("runsList");
-  list.innerHTML = "";
+  <h2>Runs</h2>
+  <ul id="runsList"></ul>
 
-  data.forEach(run => {
-    const li = document.createElement("li");
-    li.textContent = `Distance: ${run.distance} km | BPM: ${run.bpm}`;
-    list.appendChild(li);
-  });
-}
-</script>
+  <div id="analysis"></div>
+
+  <script>
+    async function loadRuns() {
+      const res = await fetch("http://localhost:3000/runs");
+      const data = await res.json();
+
+      const list = document.getElementById("runsList");
+      list.innerHTML = "";
+
+      data.forEach(run => {
+        const li = document.createElement("li");
+
+        li.innerHTML = `
+          Distance: ${run.distance} km |
+          Duration: ${run.duration} min |
+          BPM: ${run.bpm}
+          <button onclick="analyzeRun(${run.id})">Analyze</button>
+        `;
+
+        list.appendChild(li);
+      });
+    }
+
+    async function addRun() {
+      const distance = document.getElementById("distance").value;
+      const duration = document.getElementById("duration").value;
+      const bpm = document.getElementById("bpm").value;
+
+      await fetch("http://localhost:3000/runs", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          distance: Number(distance),
+          duration: Number(duration),
+          bpm: Number(bpm)
+        })
+      });
+
+      document.getElementById("distance").value = "";
+      document.getElementById("duration").value = "";
+      document.getElementById("bpm").value = "";
+
+      loadRuns();
+    }
+
+    async function analyzeRun(id) {
+      const res = await fetch(`http://localhost:3000/runs/${id}/diagnosis`, {
+        method: "POST"
+      });
+
+      const data = await res.json();
+      displayAnalysis(data);
+    }
+
+    function displayAnalysis(data) {
+      const container = document.getElementById("analysis");
+
+      container.innerHTML = `
+        <h2>AI Analysis</h2>
+
+        <p><strong>Score:</strong> ${data.score}/10</p>
+
+        <p><strong>Strengths:</strong></p>
+        <ul>${data.strengths.map(s => `<li>${s}</li>`).join("")}</ul>
+
+        <p><strong>Weaknesses:</strong></p>
+        <ul>${data.weaknesses.map(w => `<li>${w}</li>`).join("")}</ul>
+
+        <p><strong>Recommendations:</strong></p>
+        <ul>${data.recommendations.map(r => `<li>${r}</li>`).join("")}</ul>
+      `;
+    }
+
+    window.onload = loadRuns;
+  </script>
 
 </body>
 </html>
