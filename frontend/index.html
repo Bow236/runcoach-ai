@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>RunCoach AI</title>
+</head>
+<body>
+
+<h1>Runs</h1>
+
+<button onclick="loadRuns()">Load Runs</button>
+
+<ul id="runsList"></ul>
+
+<script>
+async function loadRuns() {
+  const res = await fetch("http://localhost:3000/runs");
+  const data = await res.json();
+
+  const list = document.getElementById("runsList");
+  list.innerHTML = "";
+
+  data.forEach(run => {
+    const li = document.createElement("li");
+    li.textContent = `Distance: ${run.distance} km | BPM: ${run.bpm}`;
+    list.appendChild(li);
+  });
+}
+</script>
+
+</body>
+</html>
