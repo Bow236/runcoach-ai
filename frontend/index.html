@@ -2,44 +2,229 @@
 <html>
 <head>
   <title>RunCoach AI</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: #f4f5f7;
+      color: #111;
+    }
+
+    .app {
+      max-width: 390px;
+      min-height: 100vh;
+      margin: auto;
+      background: #ffffff;
+      padding: 28px 22px 90px;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 26px;
+      margin-bottom: 28px;
+    }
+
+    h2 {
+      font-size: 20px;
+      margin-top: 28px;
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: bold;
+      color: #6b7280;
+      margin-bottom: 8px;
+      margin-top: 18px;
+      text-transform: uppercase;
+    }
+
+    input {
+      width: 100%;
+      padding: 18px;
+      border: 1px solid #d1d5db;
+      border-radius: 14px;
+      font-size: 18px;
+      background: #f9fafb;
+    }
+
+    button {
+      width: 100%;
+      padding: 18px;
+      margin-top: 24px;
+      border: none;
+      border-radius: 14px;
+      background: #000;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .run-card, .analysis-card, .profile-card {
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      padding: 16px;
+      margin-top: 14px;
+      background: #ffffff;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+    }
+
+    .run-card p {
+      margin: 6px 0;
+      color: #374151;
+    }
+
+    .run-card button {
+      margin-top: 12px;
+      padding: 12px;
+      font-size: 14px;
+    }
+
+    ul {
+      padding-left: 20px;
+    }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 390px;
+      max-width: 100%;
+      height: 70px;
+      background: rgba(255,255,255,0.95);
+      border-top: 1px solid #e5e7eb;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      font-size: 12px;
+      color: #6b7280;
+    }
+
+    .bottom-nav span {
+      text-align: center;
+      cursor: pointer;
+    }
+
+    .bottom-nav span.active {
+      color: #000;
+      font-weight: bold;
+    }
+  </style>
 </head>
+
 <body>
 
-  <h1>RunCoach AI</h1>
+  <div class="app">
 
-  <h2>Add Run</h2>
+    <!-- HOME -->
+    <div id="homeScreen">
+      <h1>RunCoach AI</h1>
+      <h2>Home</h2>
+      <p>Welcome to your running performance dashboard.</p>
+      <div id="homeRunsList"></div>
+    </div>
 
-  <input id="distance" placeholder="Distance (km)">
-  <input id="duration" placeholder="Duration (min)">
-  <input id="bpm" placeholder="BPM">
+    <!-- ADD RUN -->
+    <div id="addScreen" style="display:none;">
+      <h1>Add Run</h1>
 
-  <button onclick="addRun()">Add Run</button>
+      <label>Distance (km)</label>
+      <input id="distance" type="number" placeholder="0.0">
 
-  <h2>Runs</h2>
-  <ul id="runsList"></ul>
+      <label>Duration (minutes)</label>
+      <input id="duration" type="number" placeholder="0">
 
-  <div id="analysis"></div>
+      <label>Heart Rate (BPM)</label>
+      <input id="bpm" type="number" placeholder="0">
+
+      <button onclick="addRun()">▷ Save Run</button>
+    </div>
+
+    <!-- HISTORY -->
+    <div id="historyScreen" style="display:none;">
+      <h1>History</h1>
+      <div id="runsList"></div>
+    </div>
+
+    <!-- AI ANALYSIS -->
+    <div id="aiScreen" style="display:none;">
+      <h1>AI Analysis</h1>
+      <div id="analysis">
+        <p>Select a run from History and click Analyze.</p>
+      </div>
+    </div>
+
+    <!-- PROFILE -->
+    <div id="profileScreen" style="display:none;">
+      <h1>Profile</h1>
+
+      <div class="profile-card">
+        <p><strong>Name:</strong> Maria</p>
+        <p><strong>Level:</strong> Intermediate</p>
+        <p><strong>Goal:</strong> Performance improvement</p>
+        <p><strong>Max Heart Rate:</strong> 190 BPM</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- BOTTOM NAVIGATION -->
+  <div class="bottom-nav">
+    <span id="navHome" class="active" onclick="showScreen('homeScreen', 'navHome')">⌂<br>Home</span>
+    <span id="navAdd" onclick="showScreen('addScreen', 'navAdd')">＋<br>Add</span>
+    <span id="navHistory" onclick="showScreen('historyScreen', 'navHistory')">↺<br>History</span>
+    <span id="navAI" onclick="showScreen('aiScreen', 'navAI')">♧<br>AI</span>
+    <span id="navProfile" onclick="showScreen('profileScreen', 'navProfile')">♡<br>Profile</span>
+  </div>
 
   <script>
     async function loadRuns() {
       const res = await fetch("http://localhost:3000/runs");
       const data = await res.json();
 
-      const list = document.getElementById("runsList");
-      list.innerHTML = "";
+      const historyList = document.getElementById("runsList");
+      const homeList = document.getElementById("homeRunsList");
+
+      historyList.innerHTML = "";
+      homeList.innerHTML = "";
 
       data.forEach(run => {
-        const li = document.createElement("li");
+        const card = document.createElement("div");
+        card.className = "run-card";
 
-        li.innerHTML = `
-          Distance: ${run.distance} km |
-          Duration: ${run.duration} min |
-          BPM: ${run.bpm}
+        card.innerHTML = `
+          <p><strong>${run.distance} km</strong></p>
+          <p>Duration: ${run.duration} min</p>
+          <p>Heart rate: ${run.bpm} BPM</p>
+          <p>Source: ${run.source || "manual"}</p>
           <button onclick="analyzeRun(${run.id})">Analyze</button>
         `;
 
-        list.appendChild(li);
+        historyList.appendChild(card);
       });
+
+      if (data.length > 0) {
+        const latest = data[0];
+
+        const latestCard = document.createElement("div");
+        latestCard.className = "run-card";
+
+        latestCard.innerHTML = `
+          <p><strong>Latest Run</strong></p>
+          <p>${latest.distance} km</p>
+          <p>${latest.duration} min</p>
+          <p>${latest.bpm} BPM</p>
+        `;
+
+        homeList.appendChild(latestCard);
+      }
     }
 
     async function addRun() {
@@ -63,7 +248,8 @@
       document.getElementById("duration").value = "";
       document.getElementById("bpm").value = "";
 
-      loadRuns();
+      await loadRuns();
+      showScreen("historyScreen", "navHistory");
     }
 
     async function analyzeRun(id) {
@@ -73,26 +259,57 @@
 
       const data = await res.json();
       displayAnalysis(data);
+      showScreen("aiScreen", "navAI");
     }
 
     function displayAnalysis(data) {
       const container = document.getElementById("analysis");
 
       container.innerHTML = `
-        <h2>AI Analysis</h2>
-	<div id="analysis"></div>
+        <div class="analysis-card">
+          <h2>Performance Score</h2>
+          <h3>${data.score}/10</h3>
 
-        <p><strong>Score:</strong> ${data.score}/10</p>
+          <p><strong>Strengths:</strong></p>
+          <ul>${data.strengths.map(s => `<li>${s}</li>`).join("")}</ul>
 
-        <p><strong>Strengths:</strong></p>
-        <ul>${data.strengths.map(s => `<li>${s}</li>`).join("")}</ul>
+          <p><strong>Weaknesses:</strong></p>
+          <ul>${data.weaknesses.map(w => `<li>${w}</li>`).join("")}</ul>
 
-        <p><strong>Weaknesses:</strong></p>
-        <ul>${data.weaknesses.map(w => `<li>${w}</li>`).join("")}</ul>
-
-        <p><strong>Recommendations:</strong></p>
-        <ul>${data.recommendations.map(r => `<li>${r}</li>`).join("")}</ul>
+          <p><strong>Recommendations:</strong></p>
+          <ul>${data.recommendations.map(r => `<li>${r}</li>`).join("")}</ul>
+        </div>
       `;
+    }
+
+    function showScreen(screenId, navId) {
+      const screens = [
+        "homeScreen",
+        "addScreen",
+        "historyScreen",
+        "aiScreen",
+        "profileScreen"
+      ];
+
+      screens.forEach(id => {
+        document.getElementById(id).style.display = "none";
+      });
+
+      document.getElementById(screenId).style.display = "block";
+
+      const navItems = [
+        "navHome",
+        "navAdd",
+        "navHistory",
+        "navAI",
+        "navProfile"
+      ];
+
+      navItems.forEach(id => {
+        document.getElementById(id).classList.remove("active");
+      });
+
+      document.getElementById(navId).classList.add("active");
     }
 
     window.onload = loadRuns;
