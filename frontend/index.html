@@ -27,12 +27,16 @@
     h1 {
       text-align: center;
       font-size: 26px;
-      margin-bottom: 28px;
+      margin-bottom: 26px;
     }
 
     h2 {
       font-size: 20px;
-      margin-top: 28px;
+      margin-top: 24px;
+    }
+
+    p {
+      color: #374151;
     }
 
     label {
@@ -56,8 +60,8 @@
 
     button {
       width: 100%;
-      padding: 18px;
-      margin-top: 24px;
+      padding: 16px;
+      margin-top: 18px;
       border: none;
       border-radius: 14px;
       background: #000;
@@ -66,7 +70,7 @@
       cursor: pointer;
     }
 
-    .run-card, .analysis-card, .profile-card {
+    .card {
       border: 1px solid #e5e7eb;
       border-radius: 16px;
       padding: 16px;
@@ -75,12 +79,11 @@
       box-shadow: 0 4px 12px rgba(0,0,0,0.04);
     }
 
-    .run-card p {
+    .card p {
       margin: 6px 0;
-      color: #374151;
     }
 
-    .run-card button {
+    .card button {
       margin-top: 12px;
       padding: 12px;
       font-size: 14px;
@@ -98,7 +101,7 @@
       width: 390px;
       max-width: 100%;
       height: 70px;
-      background: rgba(255,255,255,0.95);
+      background: rgba(255,255,255,0.96);
       border-top: 1px solid #e5e7eb;
       display: flex;
       justify-content: space-around;
@@ -123,15 +126,12 @@
 
   <div class="app">
 
-    <!-- HOME -->
     <div id="homeScreen">
       <h1>RunCoach AI</h1>
-      <h2>Home</h2>
       <p>Welcome to your running performance dashboard.</p>
-      <div id="homeRunsList"></div>
+      <div id="homeRuns"></div>
     </div>
 
-    <!-- ADD RUN -->
     <div id="addScreen" style="display:none;">
       <h1>Add Run</h1>
 
@@ -144,38 +144,41 @@
       <label>Heart Rate (BPM)</label>
       <input id="bpm" type="number" placeholder="0">
 
-      <button onclick="addRun()">▷ Save Run</button>
+      <button onclick="addRun()">Save Run</button>
     </div>
 
-    <!-- HISTORY -->
     <div id="historyScreen" style="display:none;">
       <h1>History</h1>
       <div id="runsList"></div>
     </div>
 
-    <!-- AI ANALYSIS -->
     <div id="aiScreen" style="display:none;">
       <h1>AI Analysis</h1>
       <div id="analysis">
-        <p>Select a run from History and click Analyze.</p>
+        <div class="card">
+          <p>Select a run from History and click Analyze.</p>
+        </div>
       </div>
     </div>
 
-    <!-- PROFILE -->
     <div id="profileScreen" style="display:none;">
       <h1>Profile</h1>
 
-      <div class="profile-card">
-        <p><strong>Name:</strong> Maria</p>
-        <p><strong>Level:</strong> Intermediate</p>
-        <p><strong>Goal:</strong> Performance improvement</p>
+      <div class="card">
+        <p><strong>Name:</strong> User</p>
+        <p><strong>Level:</strong> Beginner / Intermediate</p>
+        <p><strong>Goal:</strong> Improve running performance</p>
         <p><strong>Max Heart Rate:</strong> 190 BPM</p>
+      </div>
+
+      <div class="card">
+        <p><strong>Total Runs:</strong> <span id="totalRuns">0</span></p>
+        <p><strong>Data Source:</strong> Manual entry</p>
       </div>
     </div>
 
   </div>
 
-  <!-- BOTTOM NAVIGATION -->
   <div class="bottom-nav">
     <span id="navHome" class="active" onclick="showScreen('homeScreen', 'navHome')">⌂<br>Home</span>
     <span id="navAdd" onclick="showScreen('addScreen', 'navAdd')">＋<br>Add</span>
@@ -185,19 +188,23 @@
   </div>
 
   <script>
+    const API_BASE = window.location.protocol === "file:"
+      ? "http://localhost:3000"
+      : "";
+
     async function loadRuns() {
-      const res = await fetch("http://localhost:3000/runs");
+      const res = await fetch(`${API_BASE}/runs`);
       const data = await res.json();
 
       const historyList = document.getElementById("runsList");
-      const homeList = document.getElementById("homeRunsList");
+      const homeList = document.getElementById("homeRuns");
 
       historyList.innerHTML = "";
       homeList.innerHTML = "";
 
       data.forEach(run => {
         const card = document.createElement("div");
-        card.className = "run-card";
+        card.className = "card";
 
         card.innerHTML = `
           <p><strong>${run.distance} km</strong></p>
@@ -213,18 +220,23 @@
       if (data.length > 0) {
         const latest = data[0];
 
-        const latestCard = document.createElement("div");
-        latestCard.className = "run-card";
-
-        latestCard.innerHTML = `
-          <p><strong>Latest Run</strong></p>
-          <p>${latest.distance} km</p>
-          <p>${latest.duration} min</p>
-          <p>${latest.bpm} BPM</p>
+        homeList.innerHTML = `
+          <div class="card">
+            <p><strong>Latest Run</strong></p>
+            <p>${latest.distance} km</p>
+            <p>${latest.duration} min</p>
+            <p>${latest.bpm} BPM</p>
+          </div>
         `;
-
-        homeList.appendChild(latestCard);
+      } else {
+        homeList.innerHTML = `
+          <div class="card">
+            <p>No runs yet. Add your first run.</p>
+          </div>
+        `;
       }
+
+      document.getElementById("totalRuns").textContent = data.length;
     }
 
     async function addRun() {
@@ -232,7 +244,7 @@
       const duration = document.getElementById("duration").value;
       const bpm = document.getElementById("bpm").value;
 
-      await fetch("http://localhost:3000/runs", {
+      await fetch(`${API_BASE}/runs`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -253,7 +265,7 @@
     }
 
     async function analyzeRun(id) {
-      const res = await fetch(`http://localhost:3000/runs/${id}/diagnosis`, {
+      const res = await fetch(`${API_BASE}/runs/${id}/diagnosis`, {
         method: "POST"
       });
 
@@ -266,7 +278,7 @@
       const container = document.getElementById("analysis");
 
       container.innerHTML = `
-        <div class="analysis-card">
+        <div class="card">
           <h2>Performance Score</h2>
           <h3>${data.score}/10</h3>
 
