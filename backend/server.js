@@ -33,6 +33,7 @@ app.post("/runs", (req, res) => {
     bpm: req.body.bpm,
     pace: req.body.pace || null,
     score: null
+    source: req.body.source || "manual"
   };
 
   runs.push(newRun);
