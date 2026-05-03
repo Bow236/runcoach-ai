@@ -1,72 +1,121 @@
+require("dotenv").config();
+
 const express = require("express");
 const cors = require("cors");
+const { Pool } = require("pg");
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-const runs = [
-  {
-    id: 1,
-    distance: 5.2,
-    duration: 30,
-    bpm: 170,
-    pace: "5:45/km",
-    score: 6.5
-  }
-];
+/* =========================
+   DATABASE CONNECTION
+========================= */
 
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false
+  }
+});
+
+// Test connexion
+pool.query("SELECT NOW()", (err, res) => {
+  if (err) {
+    console.error("DB connection error:", err);
+  } else {
+    console.log("DB connected:", res.rows);
+  }
+});
+
+/* =========================
+   CREATE TABLE (AUTO)
+========================= */
+
+const createTable = async () => {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS runs (
+      id SERIAL PRIMARY KEY,
+      distance FLOAT,
+      duration INT,
+      bpm INT,
+      pace TEXT,
+      score FLOAT,
+      source TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+};
+
+createTable();
+
+/* =========================
+   ROUTES
+========================= */
+
+// Home
 app.get("/", (req, res) => {
   res.json({ message: "RunCoach AI backend is running 🚀" });
 });
 
-app.get("/runs", (req, res) => {
-  res.json(runs);
+// GET all runs
+app.get("/runs", async (req, res) => {
+  const result = await pool.query("SELECT * FROM runs ORDER BY id DESC");
+  res.json(result.rows);
 });
 
-app.post("/runs", (req, res) => {
-  const newRun = {
-    id: runs.length + 1,
-    distance: req.body.distance,
-    duration: req.body.duration,
-    bpm: req.body.bpm,
-    pace: req.body.pace || null,
-    score: null
-    source: req.body.source || "manual"
-  };
+// POST add run
+app.post("/runs", async (req, res) => {
+  const { distance, duration, bpm } = req.body;
 
-  runs.push(newRun);
-  res.status(201).json(newRun);
+  const result = await pool.query(
+    `INSERT INTO runs (distance, duration, bpm, source)
+     VALUES ($1, $2, $3, $4)
+     RETURNING *`,
+    [distance, duration, bpm, "manual"]
+  );
+
+  res.status(201).json(result.rows[0]);
 });
 
-app.get("/runs/:id", (req, res) => {
-  const run = runs.find((r) => r.id === Number(req.params.id));
+// GET run by ID
+app.get("/runs/:id", async (req, res) => {
+  const result = await pool.query(
+    "SELECT * FROM runs WHERE id = $1",
+    [req.params.id]
+  );
 
-  if (!run) {
+  if (result.rows.length === 0) {
     return res.status(404).json({ error: "Run not found" });
   }
 
-  res.json(run);
+  res.json(result.rows[0]);
 });
 
-app.post("/runs/:id/diagnosis", (req, res) => {
-  const run = runs.find((r) => r.id === Number(req.params.id));
+// AI Diagnosis
+app.post("/runs/:id/diagnosis", async (req, res) => {
+  const result = await pool.query(
+    "SELECT * FROM runs WHERE id = $1",
+    [req.params.id]
+  );
 
-  if (!run) {
+  if (result.rows.length === 0) {
     return res.status(404).json({ error: "Run not found" });
   }
 
-  const diagnosis = {
+  const run = result.rows[0];
+
+  let diagnosis = {
     score: 8,
-    strengths: ["Good consistency"],
+    strengths: [],
     weaknesses: [],
     recommendations: []
   };
 
   if (run.bpm > 170) {
     diagnosis.weaknesses.push("Heart rate is too high");
-    diagnosis.recommendations.push("Slow down at the beginning of the run");
+    diagnosis.recommendations.push("Slow down at the beginning");
   }
 
   if (run.duration > 45) {
@@ -74,15 +123,19 @@ app.post("/runs/:id/diagnosis", (req, res) => {
   }
 
   if (run.distance >= 5) {
-    diagnosis.strengths.push("Good running distance");
+    diagnosis.strengths.push("Good distance");
   }
 
   if (diagnosis.weaknesses.length === 0) {
-    diagnosis.recommendations.push("Keep a stable pace");
+    diagnosis.recommendations.push("Maintain a stable pace");
   }
 
   res.json(diagnosis);
 });
+
+/* =========================
+   START SERVER
+========================= */
 
 const PORT = 3000;
 
