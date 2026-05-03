@@ -32,7 +32,12 @@ Frontend → Backend → Analysis
 cd backend
 node server.js
 
-### Frontend
+## Future improvements
+
+- Add PostgreSQL database with Neon
+- Deploy the backend on Vercel
+- Add Garmin integration in a future version
+- Replace rule-based diagnosis with a real AI model
 
 ```bash
 cd frontend
