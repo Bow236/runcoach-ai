@@ -1,92 +1,139 @@
 # RunCoach AI
 
-RunCoach AI is a running tracking application that allows users to add their runs and receive AI-based performance analysis.
+## Project Overview
+
+RunCoach AI is a mobile-first web application designed to help runners track their performance and receive basic AI-powered feedback.
+
+The application allows users to:
+- Add running sessions (distance, duration, heart rate)
+- View their history
+- Get performance analysis and recommendations
 
 ---
 
-## Features
+## Value Proposition
 
-- Add running sessions (distance, duration, BPM)
-- View runs history
-- Analyze performance with AI-like logic
-- Display strengths, weaknesses and recommendations
-- Dynamic frontend connected to a backend API
+RunCoach AI provides a simple coaching tool for beginner and intermediate runners.
 
----
-
-## Architecture
-
-The application follows a simple client-server architecture:
-
-Frontend → Backend → Analysis
-
-- Frontend: HTML, JavaScript
-- Backend: Node.js, Express
-- API: REST (GET, POST)
+Instead of complex fitness platforms, this application focuses on:
+- Simplicity
+- Fast data entry
+- Instant feedback
 
 ---
 
-## API Routes
+## User Stories
 
-- `GET /runs` → retrieve all runs  
-- `POST /runs` → add a new run  
-- `GET /runs/:id` → get a specific run  
-- `POST /runs/:id/diagnosis` → analyze a run  
+- As a user, I want to add a run quickly so I can track my activity.
+- As a user, I want to see my previous runs.
+- As a user, I want an analysis of my performance.
+- As a user, I want a mobile-friendly interface.
 
 ---
 
-## How to run the project
+##  Wireframes
 
-### 1. Start the backend
+Wireframes were created to design a mobile-first interface with 5 main screens:
 
-```bash
-cd backend
-node server.js# RunCoach AI
+- Home
+- Add Run
+- History
+- AI Analysis
+- Profile
 
-A running tracking application with AI-based performance analysis.
+The interface is designed to resemble a mobile application.
 
-## Features
+---
 
-- Add running sessions
-- View runs history
-- Analyze performance using AI logic
-- Dynamic frontend connected to backend API
+##  Architecture
 
-## Architecture
-
-Frontend → Backend → Analysis
-
-- Frontend: HTML, JavaScript
-- Backend: Node.js, Express
-- API: REST (GET, POST)
-
-## API Routes
-
-- GET /runs → get all runs
-- POST /runs → add a run
-- GET /runs/:id → get run details
-- POST /runs/:id/diagnosis → analyze run
-
-## How to run the project
+### Frontend
+- HTML
+- CSS
+- JavaScript
+- Mobile-first design
+- No component framework used because the prototype is simple and does not require reusable UI components.
 
 ### Backend
+- Node.js
+- Express
+- REST API
 
-```bash
-cd backend
-node server.js
+### Database
+- PostgreSQL hosted on Neon
 
-## Future improvements
+---
 
-- Add PostgreSQL database with Neon
-- Deploy the backend on Vercel
-- Add Garmin integration in a future version
-- Replace rule-based diagnosis with a real AI model
+##  API Design
 
-```bash
-cd frontend
-xdg-open index.html
+The backend is structured using separated layers:
 
-Project goal
+- `routes/` handles HTTP requests
+- `services/` contains business logic and database access
 
-This project aims to help runners imprive their performance by providing simple AI-based feedback based on their running data.
+### Endpoints
 
+- `GET /runs` → retrieve all runs
+- `POST /runs` → create a run
+- `GET /runs/:id` → retrieve one run
+- `POST /runs/:id/diagnosis` → generate performance analysis
+
+---
+
+## Database
+
+The application uses PostgreSQL.
+
+### Main table: `runs`
+
+Fields:
+- `id`
+- `distance`
+- `duration`
+- `bpm`
+- `pace`
+- `score`
+- `source`
+- `created_at`
+
+---
+
+##  Data / SID
+
+No initial dataset is required.
+
+Users create their own data through the application interface.
+
+---
+
+##  Authentication
+
+Authentication is not implemented in this prototype.
+
+Reason:
+- The project focuses on the main full-stack functionality.
+- No personal account management is required for this version.
+
+---
+
+##  Security
+
+Security measures:
+- Environment variables are used for secrets.
+- `DATABASE_URL` is stored in Vercel environment variables.
+- `.env` is not pushed to GitHub.
+- CORS is enabled.
+- Basic input validation is implemented.
+- No database password is stored directly in the source code.
+
+---
+
+## 📈 Observability
+
+Basic server-side logging is implemented.
+
+Example:
+
+```js
+console.log("[INFO] GET /runs");
+console.error("[ERROR]", err);
