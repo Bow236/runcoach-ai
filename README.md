@@ -128,7 +128,7 @@ Security measures:
 
 ---
 
-## 📈 Observability
+## Observability
 
 Basic server-side logging is implemented.
 
