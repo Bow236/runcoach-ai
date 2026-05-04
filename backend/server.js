@@ -53,10 +53,10 @@ createTable();
 /* =========================
    ROUTES
 ========================= */
+const path = require("path");
 
-// Home
 app.get("/", (req, res) => {
-  res.json({ message: "RunCoach AI backend is running 🚀" });
+  res.sendFile(path.join(__dirname, "../index.html"));
 });
 
 // GET all runs
